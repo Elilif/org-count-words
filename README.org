@@ -1,0 +1,49 @@
+#+TITLE: org-count-words
+More precise words-counting in org-mode.
+
+* Commands
+- =org-count-words-buffer=
+  
+  Count words in current org buffer. Like =count-words= but ingore words in some
+  elements like src-block.
+
+- =org-count-words-region=
+
+  Count the number of words in the region.
+
+  If called interactively, print a message reporting the number of
+  words in the region (whether or not the region is active); with
+  prefix ARG, report for the entire buffer rather than the region.
+
+  If called from Lisp, return the number of words between positions
+  START and END.
+
+- =org-count-words-subtree=
+
+  Count words in current subtree.
+
+  If called from Lisp, return the number of words.
+* Configuration
+- =org-count-words-elemnts=
+  
+  List of element types that should be included.
+
+  See =org-element-map for details.
+- =org-count-words-functions=
+  
+  Defualt function to count words.
+
+  This function should take two argments(beg and end) and return a number.
+- =org-count-words-no-recursive-elemnts=
+  
+  List of element types that should be exlucded in recursive map.
+
+  See =org-element-map= for details.
+  
+- =org-count-words-element-functions=
+
+  Alist of org elelemnt type and word-counting funtion.
+
+  Each function will be called with one arguemnt: the selected element.
+
+
