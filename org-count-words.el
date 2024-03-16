@@ -90,6 +90,7 @@ number."
     (funcall org-count-words-functions beg end)))
 
 (defun org-count-words-footnote-definition (_element)
+  "Count words in footnote-definition ELEMENT."
   1)
 
 (defun org-count-words-link (element)
