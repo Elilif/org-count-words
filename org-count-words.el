@@ -32,7 +32,7 @@ See `org-element-map' for details."
   :group 'org-count-words
   :type '(list symbol))
 
-(defcustom org-count-words-no-recursive-elemnts '()
+(defcustom org-count-words-no-recursive-elemnts '(drawer)
   "List of element types that should be exlucded in recursive map.
 
 See `org-element-map' for details."
