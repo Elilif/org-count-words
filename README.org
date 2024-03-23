@@ -23,6 +23,11 @@ More precise words-counting in org-mode.
   Count words in current subtree.
 
   If called from Lisp, return the number of words.
+
+- =org-count-words-mode=
+
+  Minor mode for displaying word count in the curent buffer and the selected
+  region.
 * Configuration
 - =org-count-words-elemnts=
   
@@ -46,4 +51,23 @@ More precise words-counting in org-mode.
 
   Each function will be called with one arguemnt: the selected element.
 
+- =org-count-words-buffer-idle-delay=
 
+  Seconds to wait before updating the word counts in the current buffer.
+
+- =org-count-words-region-idle-delay=
+
+  Seconds to wait before updating the word counts in the selected
+region.
+
+- =org-count-words-mode-line=
+
+  Mode line construct for displaying current word count.
+
+- =org-count-words-mode-line-format=
+
+  The mode-line format for displaying current word count.
+
+  This value should be a `cons' whose `car' is a format string to display the
+  word count of the current buffer, and whose `cdr' is a format string to
+  display the word count of the selected region and the current buffer.

@@ -66,6 +66,10 @@ number."
   :type 'function)
 
 (defun org-count-words--general (element beg end)
+  "General function for counting words.
+
+Extract the BEG and END value from the property of ELEMENT and
+count words in that region."
   (let ((beg (org-element-property beg element))
         (end (org-element-property end element)))
     (cond
@@ -108,6 +112,110 @@ number."
   (- (org-count-words--general element :begin :end)
      2))
 
+;;;; modeline segment
+(defcustom org-count-words-buffer-idle-delay 0.3
+  "Seconds to wait before updating the word counts in the current buffer."
+  :group 'org-count-words
+  :type 'number)
+
+(defcustom org-count-words-region-idle-delay 0.1
+  "Seconds to wait before updating the word counts in the selected
+region."
+  :group 'org-count-words
+  :type 'number)
+
+(defcustom org-count-words-mode-line '(:eval (org-count-words-update-modeline))
+  "Mode line construct for displaying current word count."
+  :group 'org-count-words
+  :type 'sexp)
+
+(defcustom org-count-words-mode-line-format '("Words:%s" . "Words:%s/%s")
+  "The mode-line format for displaying current word count.
+
+This value should be a `cons' whose `car' is a format string to
+display the word count of the current buffer, and whose `cdr' is
+a format string to display the word count of the selected region
+and the current buffer."
+  :group 'org-count-words
+  :type 'cons)
+
+(defvar-local org-count-words-buffer-count nil
+  "Keep track of the per-buffer word-count statistics used to
+update the modeline.")
+
+(defvar-local org-count-words-region-count nil
+  "Keep track of the per-buffer region word-count statistics used to
+update the modeline.")
+
+(defvar org-count-words-mode)
+
+(defun org-count-words-update-modeline ()
+  "Update word count information."
+  (when org-count-words-mode
+    (if (use-region-p)
+        (format (cdr org-count-words-mode-line-format)
+                org-count-words-region-count org-count-words-buffer-count)
+      (format (car org-count-words-mode-line-format)
+              org-count-words-buffer-count))))
+
+(defun org-count-words-update-buffer-count (&rest _args)
+  (when org-count-words-mode
+    (setq org-count-words-buffer-count (org-count-words-buffer))))
+
+(defun org-count-words-update-region-count (&rest _args)
+  (when (and org-count-words-mode (use-region-p))
+    (setq org-count-words-region-count (org-count-words-region (region-beginning)
+                                                               (region-end)))))
+
+(defun org-count-words-debounce (&optional delay default)
+  "Return a function that debounces its argument function."
+  (let ((debounce-timer nil))
+    (lambda (orig-fn &rest args)
+      "Debounce calls to this function."
+      (if (timerp debounce-timer)
+          (timer-set-idle-time debounce-timer delay)
+        (prog1 default
+          (setq debounce-timer
+                (run-with-idle-timer
+                 delay nil
+                 (lambda (buf)
+                   (cancel-timer debounce-timer)
+                   (setq debounce-timer nil)
+                   (with-current-buffer buf
+                     (apply orig-fn args)
+                     (force-mode-line-update)))
+                 (current-buffer))))))))
+
+;;;###autoload
+(define-minor-mode org-count-words-mode
+  "Minor mode for displaying word count in the curent buffer and the
+selected region."
+  :group 'org-count-words
+  (cond
+   (org-count-words-mode
+    (org-count-words-update-buffer-count)
+    (advice-add #'org-count-words-update-buffer-count
+                :around (org-count-words-debounce org-count-words-buffer-idle-delay)
+                '((name . debounce)
+                  (depth . -99)))
+
+    (advice-add #'org-count-words-update-region-count
+                :around (org-count-words-debounce org-count-words-region-idle-delay)
+                '((name . debounce)
+                  (depth . -99)))
+    (make-variable-buffer-local 'mode-line-misc-info)
+    (add-to-list 'mode-line-misc-info org-count-words-mode-line)
+    (add-hook 'after-change-functions #'org-count-words-update-buffer-count nil t)
+    (add-hook 'post-select-region-hook #'org-count-words-update-region-count nil t))
+   (t
+    (setq org-count-words-buffer-count nil
+          org-count-words-region-count nil)
+    (setq mode-line-misc-info (delq org-count-words-mode-line mode-line-misc-info))
+    (remove-hook 'after-change-functions #'org-count-words-update-buffer-count t)
+    (remove-hook 'post-select-region-hook #'org-count-words-update-region-count t))))
+
+
+;;;; interactive functions
 (defun org-count-words-verse-block (element)
   "Count words in verse-block ELEMENT."
   (org-count-words--general element :contents-begin :contents-end))
