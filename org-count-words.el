@@ -147,6 +147,20 @@ update the modeline.")
   "Keep track of the per-buffer region word-count statistics used to
 update the modeline.")
 
+(defvar-local org-count-words--current-subtree nil
+  "the current subtree.")
+
+(defvar-local org-count-words--unchanged-count nil)
+
+(defun org-count-words--buffer-set-info ()
+  (let ((buffer-wc (org-count-words-buffer))
+        (subtree-wc (org-count-words-subtree))
+        (heading (org-element-lineage
+                  (org-element-at-point)
+                  '(headline) t)))
+    (setq org-count-words--current-subtree heading
+          org-count-words--unchanged-count (- buffer-wc subtree-wc))))
+
 (defvar org-count-words-mode)
 
 (defun org-count-words-update-modeline ()
@@ -160,7 +174,13 @@ update the modeline.")
 
 (defun org-count-words-update-buffer-count (&rest _args)
   (when org-count-words-mode
-    (setq org-count-words-buffer-count (org-count-words-buffer))))
+    (let ((heading (org-element-lineage
+                    (org-element-at-point)
+                    '(headline) t)))
+      (unless (equal heading org-count-words--current-subtree)
+        (org-count-words--buffer-set-info)))
+    (setq org-count-words-buffer-count (+ (org-count-words-subtree)
+                                          org-count-words--unchanged-count))))
 
 (defun org-count-words-update-region-count (&rest _args)
   (when (and org-count-words-mode (use-region-p))
@@ -209,7 +229,8 @@ selected region."
     (add-hook 'post-select-region-hook #'org-count-words-update-region-count nil t))
    (t
     (setq org-count-words-buffer-count nil
-          org-count-words-region-count nil)
+          org-count-words-region-count nil
+          org-count-words--current-subtree nil)
     (setq mode-line-misc-info (delq org-count-words-mode-line mode-line-misc-info))
     (remove-hook 'after-change-functions #'org-count-words-update-buffer-count t)
     (remove-hook 'post-select-region-hook #'org-count-words-update-region-count t))))
