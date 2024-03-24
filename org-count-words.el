@@ -223,8 +223,9 @@ selected region."
                 :around (org-count-words-debounce org-count-words-region-idle-delay)
                 '((name . debounce)
                   (depth . -99)))
-    (make-variable-buffer-local 'mode-line-misc-info)
-    (add-to-list 'mode-line-misc-info org-count-words-mode-line)
+    (set (make-local-variable 'mode-line-misc-info)
+         (append mode-line-misc-info
+                 (list org-count-words-mode-line)))
     (add-hook 'after-change-functions #'org-count-words-update-buffer-count nil t)
     (add-hook 'post-select-region-hook #'org-count-words-update-region-count nil t))
    (t
