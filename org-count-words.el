@@ -176,16 +176,27 @@ update the modeline.")
   (when org-count-words-mode
     (let ((heading (org-element-lineage
                     (org-element-at-point)
-                    '(headline) t)))
+                    '(headline) t))
+          subtree-wc)
       (unless (equal heading org-count-words--current-subtree)
-        (org-count-words--buffer-set-info)))
-    (setq org-count-words-buffer-count (+ (org-count-words-subtree)
-                                          org-count-words--unchanged-count))))
+        (while-no-input
+          (org-count-words--buffer-set-info)))
+      (pcase (setq subtree-wc (while-no-input (org-count-words-subtree)))
+        ('t nil)
+        ((pred numberp)
+         (setq org-count-words-buffer-count
+               (+ subtree-wc
+                  org-count-words--unchanged-count)))))))
 
 (defun org-count-words-update-region-count (&rest _args)
   (when (and org-count-words-mode (use-region-p))
-    (setq org-count-words-region-count (org-count-words-region (region-beginning)
-                                                               (region-end)))))
+    (let (region-wc)
+      (pcase (setq region-wc (while-no-input
+                               (org-count-words-region (region-beginning)
+                                                       (region-end))))
+        ('t nil)
+        ((pred numberp)
+         (setq org-count-words-region-count region-wc))))))
 
 (defun org-count-words-debounce (&optional delay default)
   "Return a function that debounces its argument function."
