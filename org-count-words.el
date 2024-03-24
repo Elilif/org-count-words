@@ -139,11 +139,11 @@ and the current buffer."
   :group 'org-count-words
   :type 'cons)
 
-(defvar-local org-count-words-buffer-count nil
+(defvar-local org-count-words-buffer-count 0
   "Keep track of the per-buffer word-count statistics used to
 update the modeline.")
 
-(defvar-local org-count-words-region-count nil
+(defvar-local org-count-words-region-count 0
   "Keep track of the per-buffer region word-count statistics used to
 update the modeline.")
 
