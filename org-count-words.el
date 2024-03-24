@@ -172,8 +172,11 @@ update the modeline.")
       (format (car org-count-words-mode-line-format)
               org-count-words-buffer-count))))
 
-(defun org-count-words-update-buffer-count (&rest _args)
-  (when org-count-words-mode
+(defun org-count-words-update-buffer-count (beg end len)
+  (when (and org-count-words-mode
+             (or (> len 0)
+                 (string-match-p "\\cc\\|[A-Za-z0-9][A-Za-z0-9[:punct:]]*"
+                                 (buffer-substring beg end))))
     (let ((heading (org-element-lineage
                     (org-element-at-point)
                     '(headline) t))
