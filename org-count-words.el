@@ -222,8 +222,7 @@ update the modeline.")
 
 ;;;###autoload
 (define-minor-mode org-count-words-mode
-  "Minor mode for displaying word count in the curent buffer and the
-selected region."
+  "Minor mode for displaying word count in the modeline."
   :group 'org-count-words
   (cond
    (org-count-words-mode
@@ -243,8 +242,8 @@ selected region."
     (add-hook 'after-change-functions #'org-count-words-update-buffer-count nil t)
     (add-hook 'post-select-region-hook #'org-count-words-update-region-count nil t))
    (t
-    (setq org-count-words-buffer-count nil
-          org-count-words-region-count nil
+    (setq org-count-words-buffer-count 0
+          org-count-words-region-count 0
           org-count-words--current-subtree nil)
     (setq mode-line-misc-info (delq org-count-words-mode-line mode-line-misc-info))
     (remove-hook 'after-change-functions #'org-count-words-update-buffer-count t)

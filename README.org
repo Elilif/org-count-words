@@ -1,6 +1,13 @@
 #+TITLE: org-count-words
 More precise words-counting in org-mode.
 
+In Org-mode, there are many elements that we do not want to include in word
+count, such as code blocks, options, and drawers. The usual practice is to use
+regular expressions to exclude them, but there are too many syntaxes in
+org-mode, making it difficult to fully include them with regular expressions.
+This package takes advange of the org-element API to filter the elements we
+want, count their words, and display the result on the modeline.
+
 * Commands
 - =org-count-words-buffer=
   
@@ -26,8 +33,7 @@ More precise words-counting in org-mode.
 
 - =org-count-words-mode=
 
-  Minor mode for displaying word count in the curent buffer and the selected
-  region.
+  Minor mode for displaying word count in the modeline.
 * Configuration
 - =org-count-words-elemnts=
   
@@ -57,8 +63,7 @@ More precise words-counting in org-mode.
 
 - =org-count-words-region-idle-delay=
 
-  Seconds to wait before updating the word counts in the selected
-region.
+  Seconds to wait before updating the word counts in the selected region.
 
 - =org-count-words-mode-line=
 
@@ -68,6 +73,6 @@ region.
 
   The mode-line format for displaying current word count.
 
-  This value should be a `cons' whose `car' is a format string to display the
-  word count of the current buffer, and whose `cdr' is a format string to
+  This value should be a =cons= whose =car= is a format string to display the
+  word count of the current buffer, and whose =cdr= is a format string to
   display the word count of the selected region and the current buffer.
