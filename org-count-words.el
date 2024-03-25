@@ -11,6 +11,8 @@
 (require 'cl-lib)
 (require 'org-element)
 
+;;;; Customizations
+
 (defgroup org-count-words nil
   "Count word in org-mode."
   :link '(url-link :tag "Homepage" "https://github.com/Elilif/org-count-words")
@@ -57,13 +59,30 @@ element."
   :group 'org-count-words
   :type '(alist :key-type symbol :value-type function))
 
-(defcustom org-count-words-functions #'count-words
+(defcustom org-count-words-function #'org-count-words-count-words
   "Defualt function to count words.
 
 This function should take two argments(beg and end) and return a
 number."
   :group 'org-count-words
   :type 'function)
+
+;;;; Utilities
+
+(defun org-count-words-count-words (start end)
+  "Count words between START and END."
+  (let ((words 0)
+        ;; Count across field boundaries. (Bug#41761)
+        (inhibit-field-text-motion t))
+    (save-excursion
+      (save-restriction
+        (narrow-to-region start end)
+        (goto-char (point-min))
+        (while (re-search-forward
+                "\\cc\\|[A-Za-z0-9][A-Za-z0-9[:punct:]]*"
+                end t)
+          (setq words (1+ words)))))
+    words))
 
 (defun org-count-words--general (element beg end)
   "General function for counting words.
@@ -74,7 +93,7 @@ count words in that region."
         (end (org-element-property end element)))
     (cond
      ((and beg end)
-      (funcall org-count-words-functions beg end))
+      (funcall org-count-words-function beg end))
      ((or beg end)
       (error "Wrong region!"))
      (t 0))))
@@ -91,7 +110,7 @@ count words in that region."
   (let ((beg (org-element-property :begin element))
         (end (or (org-element-property :contents-begin element)
                  (org-element-property :end element))))
-    (funcall org-count-words-functions beg end)))
+    (funcall org-count-words-function beg end)))
 
 (defun org-count-words-footnote-definition (_element)
   "Count words in footnote-definition ELEMENT."
@@ -111,6 +130,10 @@ count words in that region."
   "Count words in example-block ELEMENT."
   (- (org-count-words--general element :begin :end)
      2))
+
+(defun org-count-words-verse-block (element)
+  "Count words in verse-block ELEMENT."
+  (org-count-words--general element :contents-begin :contents-end))
 
 ;;;; modeline segment
 (defcustom org-count-words-buffer-idle-delay 0.3
@@ -251,9 +274,6 @@ update the modeline.")
 
 
 ;;;; interactive functions
-(defun org-count-words-verse-block (element)
-  "Count words in verse-block ELEMENT."
-  (org-count-words--general element :contents-begin :contents-end))
 
 ;;;###autoload
 (defun org-count-words-buffer ()
