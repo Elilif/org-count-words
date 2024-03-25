@@ -331,14 +331,15 @@ If called from Lisp, return the number of words."
   (interactive)
   (save-excursion
     (save-restriction
-      (if (org-up-heading-safe)
-          (org-narrow-to-subtree)
-        (let ((elem (org-element-lineage
-                     (org-element-at-point)
-                     '(section) t)))
-          (narrow-to-region
-           (org-element-property :begin elem)
-           (org-element-property :end elem))))
+      (if (org-before-first-heading-p)
+          (let ((elem (org-element-lineage
+                       (org-element-at-point)
+                       '(section) t)))
+            (narrow-to-region
+             (org-element-property :begin elem)
+             (org-element-property :end elem)))
+        (org-up-heading-safe)
+        (org-narrow-to-subtree))
       (if (called-interactively-p 'any)
           (call-interactively #'org-count-words-buffer)
         (org-count-words-buffer)))))
