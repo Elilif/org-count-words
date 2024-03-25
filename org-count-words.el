@@ -226,7 +226,7 @@ update the modeline.")
   :group 'org-count-words
   (cond
    (org-count-words-mode
-    (org-count-words-update-buffer-count)
+    (org-count-words-update-buffer-count (point-min) (point-max) 0)
     (advice-add #'org-count-words-update-buffer-count
                 :around (org-count-words-debounce org-count-words-buffer-idle-delay)
                 '((name . debounce)
