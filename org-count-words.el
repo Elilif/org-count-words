@@ -173,7 +173,7 @@ update the modeline.")
 (defvar-local org-count-words--current-subtree nil
   "the current subtree.")
 
-(defvar-local org-count-words--unchanged-count nil)
+(defvar-local org-count-words--unchanged-count 0)
 
 (defun org-count-words--buffer-set-info ()
   (let ((buffer-wc (org-count-words-buffer))
@@ -200,10 +200,10 @@ update the modeline.")
              (or (> len 0)
                  (string-match-p "\\cc\\|[A-Za-z0-9][A-Za-z0-9[:punct:]]*"
                                  (buffer-substring beg end))))
-    (let ((heading (org-element-lineage
-                    (org-element-at-point)
-                    '(headline) t))
-          subtree-wc)
+    (let* ((elem (org-element-at-point))
+           (heading (or (org-element-lineage elem '(headline) t)
+                        (org-element-lineage elem '(section) t)))
+           subtree-wc)
       (unless (equal heading org-count-words--current-subtree)
         (while-no-input
           (org-count-words--buffer-set-info)))
@@ -331,8 +331,14 @@ If called from Lisp, return the number of words."
   (interactive)
   (save-excursion
     (save-restriction
-      (org-back-to-heading)
-      (org-narrow-to-subtree)
+      (if (org-up-heading-safe)
+          (org-narrow-to-subtree)
+        (let ((elem (org-element-lineage
+                     (org-element-at-point)
+                     '(section) t)))
+          (narrow-to-region
+           (org-element-property :begin elem)
+           (org-element-property :end elem))))
       (if (called-interactively-p 'any)
           (call-interactively #'org-count-words-buffer)
         (org-count-words-buffer)))))
