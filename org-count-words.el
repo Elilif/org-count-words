@@ -191,9 +191,11 @@ update the modeline.")
   (when org-count-words-mode
     (if (use-region-p)
         (format (cdr org-count-words-mode-line-format)
-                org-count-words-region-count org-count-words-buffer-count)
+                (org-count-words-add-number-grouping org-count-words-region-count)
+                (org-count-words-add-number-grouping org-count-words-buffer-count))
       (format (car org-count-words-mode-line-format)
-              org-count-words-buffer-count))))
+              (org-count-words-add-number-grouping
+               org-count-words-buffer-count)))))
 
 (defun org-count-words-update-buffer-count (beg end len)
   (when (and org-count-words-mode
@@ -223,6 +225,20 @@ update the modeline.")
         ('t nil)
         ((pred numberp)
          (setq org-count-words-region-count region-wc))))))
+
+;;; src: https://www.emacswiki.org/emacs/AddCommasToNumbers
+(defun org-count-words-add-number-grouping (number &optional separator)
+  "Add commas to NUMBER and return it as a string.
+
+Optional SEPARATOR is the string to use to separate groups.
+It defaults to a comma."
+  (let ((num (number-to-string number))
+        (op (or separator ",")))
+    (while (string-match "\\(.*[0-9]\\)\\([0-9][0-9][0-9].*\\)" num)
+      (setq num (concat
+                 (match-string 1 num) op
+                 (match-string 2 num))))
+    num))
 
 (defun org-count-words-debounce (&optional delay default)
   "Return a function that debounces its argument function."
