@@ -160,7 +160,7 @@ display the word count of the current buffer, and whose `cdr' is
 a format string to display the word count of the selected region
 and the current buffer."
   :group 'org-count-words
-  :type 'cons)
+  :type '(cons string string))
 
 (defvar-local org-count-words-buffer-count 0
   "Keep track of the per-buffer word-count statistics used to
@@ -254,9 +254,11 @@ It defaults to a comma."
                  (lambda (buf)
                    (cancel-timer debounce-timer)
                    (setq debounce-timer nil)
-                   (with-current-buffer buf
-                     (apply orig-fn args)
-                     (force-mode-line-update)))
+                   (when (buffer-live-p buf)
+                     (with-current-buffer buf
+                       (apply orig-fn args)
+                       (force-mode-line-update)))
+                   )
                  (current-buffer))))))))
 
 ;;;###autoload
