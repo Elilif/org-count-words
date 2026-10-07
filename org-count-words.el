@@ -19,6 +19,9 @@
   :group 'org
   :prefix "org-count-words-")
 
+(defvar org-count-words-excluded-tags org-export-exclude-tags
+  "Tags to exclude, default to tags excluded from export.")
+
 (defcustom org-count-words-elemnts '(;; elements
                                      headline footnote-definition
                                      paragraph item
@@ -291,21 +294,33 @@ It defaults to a comma."
 
 ;;;; interactive functions
 
+(defun org-count-words-exclude-tag (elt tags)
+  "Exclude ELT if it has TAGS anywhere in its inheritance."
+  (let ((node elt)
+        (found nil))
+    (while (and node (not found))
+      (when (and (eq (org-element-type node) 'headline)
+                 (length> (cl-intersection tags (org-element-property :tags node)) 0))
+        (setq found t))
+      (setq node (org-element-property :parent node)))
+    found))
+
 ;;;###autoload
 (defun org-count-words-buffer ()
   "Count words in current org buffer.
-
 Like `count-words' but ingore words in some elements like src-block."
   (interactive)
   (let ((datum (org-element-parse-buffer))
         (words 0))
     (org-element-map datum org-count-words-elemnts
       (lambda (elt)
-        (let ((count (funcall
-                      (alist-get (org-element-type elt)
-                                 org-count-words-element-functions
-                                 #'org-count-words-default)
-                      elt)))
+        (let ((count
+               (if (org-count-words-exclude-tag elt org-count-words-excluded-tags) 0
+                 (funcall
+                  (alist-get (org-element-type elt)
+                             org-count-words-element-functions
+                             #'org-count-words-default)
+                  elt))))
           (cl-incf words count)))
       nil nil org-count-words-no-recursive-elemnts)
     (if (not (called-interactively-p 'any))
