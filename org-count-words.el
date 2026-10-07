@@ -19,6 +19,18 @@
   :group 'org
   :prefix "org-count-words-")
 
+(defvar org-count-words-excluded-tags org-export-exclude-tags
+  "Tags to exclude, default to tags excluded from export.")
+
+(defcustom org-count-words-include-citations t
+  "How `org-count-words-count-words' function treats citations.
+nil excludes it,t count each citation block as one word (defualt),
+`number' would be count of words per refernce, where references
+are separated by `;'."
+  :type '(choice (const :tag "Exclude all citation blocks" nil)
+          (const :tag "One word per citation block" t)
+          (integer :tag "Words per each reference in citation blcok")))
+
 (defcustom org-count-words-elemnts '(;; elements
                                      headline footnote-definition
                                      paragraph item
@@ -69,7 +81,7 @@ number."
 
 ;;;; Utilities
 
-(defun org-count-words-count-words (start end)
+(defun org-count-words-count-words-1 (start end)
   "Count words between START and END."
   (let ((words 0)
         ;; Count across field boundaries. (Bug#41761)
@@ -83,6 +95,26 @@ number."
                 end t)
           (setq words (1+ words)))))
     words))
+
+
+(defun org-count-words--replace-citation (cite)
+  "Return placeholder text instead of CITE."
+  (save-match-data
+    (let ((opt org-count-words-include-citations))
+      (cond
+       ((or (null opt) (and (numberp opt) (<= opt 0))) " ")
+       ((numberp opt)
+        (let ((refs (length (split-string cite ";"))))
+          (concat " " (string-join (make-list (* refs opt) "x") " ") " ")))
+       (t " x ")))))
+
+(defun org-count-words-count-words (start end)
+  "Count words between START and END."
+  (let* ((text (buffer-substring-no-properties start end))
+         (cleaned (replace-regexp-in-string "\\[cite\\(?:/[^]:]*\\)?:[^]]*\\]" #'org-count-words--replace-citation text t))
+         ;; (final (if org-count-words-include-citations text cleaned))
+         (inhibit-field-text-motion t))
+    (length (split-string cleaned "[[:space:][:punct:]]+" t))))
 
 (defun org-count-words--general (element beg end)
   "General function for counting words.
@@ -291,21 +323,33 @@ It defaults to a comma."
 
 ;;;; interactive functions
 
+(defun org-count-words-exclude-tag (elt tags)
+  "Exclude ELT if it has TAGS anywhere in its inheritance."
+  (let ((node elt)
+        (found nil))
+    (while (and node (not found))
+      (when (and (eq (org-element-type node) 'headline)
+                 (length> (cl-intersection tags (org-element-property :tags node)) 0))
+        (setq found t))
+      (setq node (org-element-property :parent node)))
+    found))
+
 ;;;###autoload
 (defun org-count-words-buffer ()
   "Count words in current org buffer.
-
 Like `count-words' but ingore words in some elements like src-block."
   (interactive)
   (let ((datum (org-element-parse-buffer))
         (words 0))
     (org-element-map datum org-count-words-elemnts
       (lambda (elt)
-        (let ((count (funcall
-                      (alist-get (org-element-type elt)
-                                 org-count-words-element-functions
-                                 #'org-count-words-default)
-                      elt)))
+        (let ((count
+               (if (org-count-words-exclude-tag elt org-count-words-excluded-tags) 0
+                 (funcall
+                  (alist-get (org-element-type elt)
+                             org-count-words-element-functions
+                             #'org-count-words-default)
+                  elt))))
           (cl-incf words count)))
       nil nil org-count-words-no-recursive-elemnts)
     (if (not (called-interactively-p 'any))
